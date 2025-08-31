@@ -59,5 +59,70 @@
 	"metadata": {
 		"title": "FeedbackApp",
 		"description": "Application de feedback utilisateur"
+	},
+	"rag": {
+		"title": "Recherche Documentaire RAG",
+		"description": "Recherchez dans vos documents PDF avec l'intelligence artificielle",
+		"tabs": {
+			"search": "Recherche",
+			"index": "Indexation",
+			"stats": "Statistiques"
+		},
+		"search": {
+			"title": "Recherche Sémantique",
+			"description": "Posez vos questions et trouvez les réponses dans vos documents",
+			"queryLabel": "Votre question",
+			"queryPlaceholder": "Ex: Que pense Hayek de la liberté économique ?",
+			"maxResults": "Nombre de résultats",
+			"minScore": "Score de pertinence minimum",
+			"searchButton": "Rechercher",
+			"searching": "Recherche en cours..."
+		},
+		"indexing": {
+			"title": "Indexation des Documents",
+			"description": "Traitez vos documents PDF pour les rendre recherchables",
+			"startButton": "Indexer les Documents PDF",
+			"processing": "Indexation en cours...",
+			"progress": "Progression",
+			"error": {
+				"generic": "Erreur lors de l'indexation"
+			},
+			"info": {
+				"title": "Processus d'indexation :",
+				"pdfs": "Extraction du texte des PDFs",
+				"chunks": "Découpage en segments",
+				"embeddings": "Génération des embeddings",
+				"storage": "Stockage dans Pinecone"
+			}
+		},
+		"results": {
+			"title": "Résultats de recherche",
+			"description": "Documents les plus pertinents pour votre recherche",
+			"contextualAnswer": "Réponse Contextuelle",
+			"loading": "Recherche en cours",
+			"searching": "Analyse des documents...",
+			"found": "trouvés",
+			"relevance": "pertinence",
+			"chunk": "Fragment",
+			"page": "Page"
+		},
+		"stats": {
+			"title": "Statistiques de l'Index",
+			"description": "Informations sur votre base de données documentaire",
+			"totalVectors": "Fragments indexés",
+			"uniqueDocuments": "Documents uniques",
+			"emptyIndex": "Aucun document indexé. Utilisez l'onglet Indexation pour commencer.",
+			"noData": "Aucune donnée disponible",
+			"dangerZone": "Zone de danger",
+			"dangerZoneDescription": "Actions irréversibles sur votre index",
+			"deleteButton": "Vider l'index",
+			"deleting": "Suppression...",
+			"deleteConfirmTitle": "Êtes-vous sûr ?",
+			"deleteConfirmDescription": "Cette action supprimera définitivement tous les documents de l'index. Cette action ne peut pas être annulée.",
+			"cancel": "Annuler",
+			"confirmDelete": "Oui, supprimer",
+			"deleteSuccess": "Index vidé avec succès",
+			"deleteError": "Erreur lors de la suppression de l'index"
+		}
 	}
 }

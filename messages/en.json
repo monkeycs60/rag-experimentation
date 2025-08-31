@@ -59,5 +59,70 @@
   "metadata": {
     "title": "FeedbackApp",
     "description": "User feedback application"
+  },
+  "rag": {
+    "title": "RAG Document Search",
+    "description": "Search through your PDF documents with artificial intelligence",
+    "tabs": {
+      "search": "Search",
+      "index": "Index",
+      "stats": "Statistics"
+    },
+    "search": {
+      "title": "Semantic Search",
+      "description": "Ask questions and find answers in your documents",
+      "queryLabel": "Your question",
+      "queryPlaceholder": "e.g. What does Hayek think about economic freedom?",
+      "maxResults": "Number of results",
+      "minScore": "Minimum relevance score",
+      "searchButton": "Search",
+      "searching": "Searching..."
+    },
+    "indexing": {
+      "title": "Document Indexing",
+      "description": "Process your PDF documents to make them searchable",
+      "startButton": "Index PDF Documents",
+      "processing": "Indexing in progress...",
+      "progress": "Progress",
+      "error": {
+        "generic": "Error during indexing"
+      },
+      "info": {
+        "title": "Indexing process:",
+        "pdfs": "Text extraction from PDFs",
+        "chunks": "Text chunking",
+        "embeddings": "Embeddings generation",
+        "storage": "Storage in Pinecone"
+      }
+    },
+    "results": {
+      "title": "Search Results",
+      "description": "Most relevant documents for your search",
+      "contextualAnswer": "Contextual Answer",
+      "loading": "Searching",
+      "searching": "Analyzing documents...",
+      "found": "found",
+      "relevance": "relevance",
+      "chunk": "Chunk",
+      "page": "Page"
+    },
+    "stats": {
+      "title": "Index Statistics",
+      "description": "Information about your document database",
+      "totalVectors": "Indexed chunks",
+      "uniqueDocuments": "Unique documents",
+      "emptyIndex": "No documents indexed. Use the Index tab to get started.",
+      "noData": "No data available",
+      "dangerZone": "Danger Zone",
+      "dangerZoneDescription": "Irreversible actions on your index",
+      "deleteButton": "Clear Index",
+      "deleting": "Deleting...",
+      "deleteConfirmTitle": "Are you sure?",
+      "deleteConfirmDescription": "This action will permanently delete all documents from the index. This cannot be undone.",
+      "cancel": "Cancel",
+      "confirmDelete": "Yes, delete",
+      "deleteSuccess": "Index cleared successfully",
+      "deleteError": "Error deleting index"
+    }
   }
 }

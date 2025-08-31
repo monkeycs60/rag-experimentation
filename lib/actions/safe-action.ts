@@ -1,5 +1,4 @@
 import { createSafeActionClient, DEFAULT_SERVER_ERROR_MESSAGE } from "next-safe-action";
-import { getTypedSession } from "../auth-helpers";
 
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
@@ -8,20 +7,6 @@ export const actionClient = createSafeActionClient({
   },
 });
 
-export const authenticatedAction = actionClient.use(async ({ next }) => {
-  const session = await getTypedSession();
-  
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-  
-  return next({
-    ctx: {
-      userId: session.user.id,
-      user: session.user,
-      session,
-    },
-  });
-});
+export const authenticatedAction = actionClient;
 
 export const unauthenticatedAction = actionClient;
