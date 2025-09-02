@@ -10,9 +10,12 @@ export function getPinecone() {
   return client;
 }
 
+export function getPineconeIndexName() {
+  return process.env.PINECONE_INDEX || process.env.PINECONE_INDEX_NAME || "pdf-rag";
+}
+
 export async function getOrCreatePineconeIndex() {
-  const indexName =
-    process.env.PINECONE_INDEX || process.env.PINECONE_INDEX_NAME || "pdf-rag";
+  const indexName = getPineconeIndexName();
   if (!indexName) throw new Error("Pinecone index name not configured");
   const dimension = Number(process.env.PINECONE_DIMENSION || 1536);
   const pc = getPinecone();

@@ -67,6 +67,11 @@ export function Navbar() {
 						</div>
 					) : session?.user ? (
 						<div className='flex items-center space-x-4'>
+							<Link
+								href='/rag'
+								className='inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2'>
+								RAG
+							</Link>
 							<div className='hidden sm:flex items-center space-x-2'>
 								<div className='h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center'>
 									<span className='text-white text-sm font-medium'>
@@ -101,6 +106,11 @@ export function Navbar() {
 						</div>
 					) : (
 						<div className='flex items-center space-x-3'>
+							<Link
+								href='/rag'
+								className='inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2'>
+								RAG
+							</Link>
 							<Link
 								href='/login'
 								className='inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2'>
