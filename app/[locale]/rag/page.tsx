@@ -1,6 +1,6 @@
 "use client";
 import { RecordMetadata } from "@pinecone-database/pinecone";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function RagPage() {
   const [indexing, setIndexing] = useState(false);
@@ -18,6 +18,22 @@ export default function RagPage() {
   const [savingPersona, setSavingPersona] = useState(false);
   const [saveMemory, setSaveMemory] = useState(true);
   const [detailed, setDetailed] = useState(true);
+  const [recent, setRecent] = useState<{ id: string; text: string }[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/rag/memory/persona");
+        const d = await r.json();
+        if (r.ok && d.ok) setPersona(d.persona || "");
+      } catch {}
+      try {
+        const r2 = await fetch("/api/rag/memory/recent");
+        const d2 = await r2.json();
+        if (r2.ok && d2.ok) setRecent(d2.items || []);
+      } catch {}
+    })();
+  }, []);
 
   async function runIndex() {
     setIndexing(true);
@@ -91,9 +107,20 @@ export default function RagPage() {
     }
   }
   async function savePersonaText() {
-    if (!persona.trim()) return;
-    setSavingPersona(true);
     setStatus(null);
+    if (!persona.trim()) {
+      try {
+        const res = await fetch("/api/rag/memory/persona", { method: "DELETE" });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Delete failed");
+        setStatus("Persona cleared");
+        setPersona("");
+      } catch (e: unknown) {
+        if (e instanceof Error) setStatus(e.message); else setStatus("Delete failed");
+      }
+      return;
+    }
+    setSavingPersona(true);
     try {
       const res = await fetch("/api/rag/memory/persona", {
         method: "POST",
@@ -179,7 +206,7 @@ export default function RagPage() {
         <textarea
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
-          placeholder="Décrivez votre rôle, objectifs, ton préféré…"
+          placeholder="Décrivez votre rôle, objectifs, ton préféré… (laisser vide puis Save pour effacer)"
           className="w-full border rounded px-3 py-2 text-sm h-24"
         />
         <div className="flex items-center gap-2">
@@ -195,6 +222,16 @@ export default function RagPage() {
             Detailed answer
           </label>
         </div>
+        {recent.length > 0 && (
+          <div className="text-xs text-gray-700">
+            <div className="font-medium mb-1">3 derniers souvenirs</div>
+            <ul className="list-disc pl-5 space-y-1">
+              {recent.map((r) => (
+                <li key={r.id} className="whitespace-pre-wrap">{r.text}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-2">

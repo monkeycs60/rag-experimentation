@@ -121,8 +121,22 @@ Be comprehensive, structured, and cite multiple sources when relevant.`;
       try {
         const text = `Q: ${query}\nA: ${typeof parsed?.answer === "string" ? parsed.answer.slice(0, 800) : ""}`;
         const v = await embedText(text);
-        const upsert = [{ id: `qa-${Date.now()}`, values: v, metadata: { type: "qa", text } as any }];
+        const id = `qa-${Date.now()}`;
+        const upsert = [{ id, values: v, metadata: { type: "qa", text } as any }];
         await (namespace.upsert ? namespace.upsert(upsert) : (index as any).upsert(upsert, { namespace: memNs }));
+        // Update recent list meta
+        try {
+          const fetched = namespace.fetch
+            ? await namespace.fetch(["mem-meta"]) : await (index as any).fetch({ ids: ["mem-meta"], namespace: memNs });
+          const m: any = fetched?.records?.["mem-meta"] || fetched?.vectors?.["mem-meta"];
+          let recent: string[] = [];
+          try { recent = m?.metadata?.recent ? JSON.parse(m.metadata.recent) : []; } catch {}
+          recent = [id, ...recent.filter((x: string) => x !== id)].slice(0, 3);
+          const metaText = `recent:${recent.join(',')}`;
+          const metaVec = await embedText(metaText);
+          const upMeta = [{ id: "mem-meta", values: metaVec, metadata: { type: "meta", recent: JSON.stringify(recent) } as any }];
+          await (namespace.upsert ? namespace.upsert(upMeta) : (index as any).upsert(upMeta, { namespace: memNs }));
+        } catch {}
       } catch {}
     }
 

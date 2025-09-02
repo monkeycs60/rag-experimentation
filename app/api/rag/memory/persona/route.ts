@@ -30,3 +30,41 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function GET() {
+  try {
+    const session = await getTypedSession();
+    const userId = session?.user?.id || "anon";
+    const ns = `mem:${userId}`;
+    const index = await getOrCreatePineconeIndex();
+    const namespace = getIndexNamespace(index as any, ns);
+    // @ts-ignore
+    const fetched = namespace.fetch
+      ? await namespace.fetch(["persona"]) : await (index as any).fetch({ ids: ["persona"], namespace: ns });
+    const m: any = fetched?.records?.persona || fetched?.vectors?.persona;
+    const text = m?.metadata?.text || "";
+    return NextResponse.json({ ok: true, persona: text });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message ?? "Persona fetch failed" }, { status: 500 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const session = await getTypedSession();
+    const userId = session?.user?.id || "anon";
+    const ns = `mem:${userId}`;
+    const index = await getOrCreatePineconeIndex();
+    const namespace = getIndexNamespace(index as any, ns);
+    // @ts-ignore
+    if (typeof namespace.deleteMany === "function") {
+      // @ts-ignore
+      await namespace.deleteMany(["persona"]);
+    } else {
+      // @ts-ignore
+      await (index as any).deleteMany({ ids: ["persona"], namespace: ns });
+    }
+    return NextResponse.json({ ok: true, message: "Persona cleared" });
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: e?.message ?? "Persona delete failed" }, { status: 500 });
+  }
+}
