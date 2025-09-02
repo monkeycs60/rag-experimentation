@@ -1,44 +1,89 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-- `app/`: Next.js App Router; localized routes in `app/[locale]/`.
-- `components/`: UI generic components (`components/ui/`).
-- `lib/`: server actions, auth, schemas, services, utils (e.g., `lib/actions/`, `lib/prisma.ts`).
-- `prisma/`: schema and migrations; client generated to `app/generated/prisma/`.
-- `messages/`: i18n dictionaries (en, fr).  
-- `tests/e2e/`: Playwright tests.  
-- `public/`, `pdf/`: static assets and sample PDFs.
+- Always document new feature in CHANGELOG.md: document name + what it does + how to use it. The objective is to have a clear and concise documentation of all app features.
 
-## Build, Test, and Development Commands
-- `npm run dev`: Start dev server with Turbopack on `localhost:3000`.
-- `npm run build`: Production build (`.next`).
-- `npm run start`: Run the built app.
-- `npm run lint`: ESLint checks.
-- `npm run test:e2e`: Run Playwright E2E.
-- `npm run test:e2e:ui`: Playwright with UI runner.
-- Postinstall: `prisma migrate deploy && prisma generate` (ensure DB reachable on deploy).
+### Prohibited Practices
 
-## Coding Style & Naming Conventions
-- TypeScript strict: no `any`; prefer inferred + explicit types.
-- Server-first: use server components/actions; avoid `useEffect` for data fetching.
-- UI: shadcn/ui, Tailwind v4 utilities; keep components small and composable.
-- Naming: `PascalCase` for components, `camelCase` for functions/vars, route folders `kebab-case`.
-- i18n: all user-visible text via `next-intl` messages.
-- Linting: ESLint (Next config). Keep imports ordered; remove dead code.
+-  **No useEffect**: Use fetch in server components via services, or handle side effects via event handlers
+-  **No TypeScript any**: Always use strong typing (not any or as any) ; if you need custom types, reuse them via @/types/ ; never use ts ignore comments.
+-  **No OOP patterns**: Avoid classes or object-oriented approaches
+-  **No Bad naming**: Use descriptive names for variables, functions, and components, it has to be explicit
+-  **No Bad comments**: Never use comments to explain the code, it has to be explicit
 
-## Testing Guidelines
-- Framework: Playwright (`tests/e2e/*.spec.ts`).
-- Selectors: prefer role- and label-based queries (`getByRole`, `getByText`).
-- Scope: add/maintain E2E for auth, RAG flows, and critical navigation.
-- Run locally: `npm run test:e2e` or `npm run test:e2e:ui` for debugging.
+### Required Practices
 
-## Commit & Pull Request Guidelines
-- Conventional Commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:` (e.g., `feat: implement rag search`).
-- PRs: clear description, linked issues, screenshots/GIFs for UI, test plan, and i18n notes.
-- Keep PRs focused; update tests and messages when behavior changes.
+-  **Component library**: Use shadcn/ui components exclusively
+-  **Generic components**: Create reusable components in `@/components/ui/` when shadcn equivalent doesn't exist
+-  **Authentication**: use `const session = await getTypedSession();` (see lib/auth-helpers.ts) to check auth and redirect if needed ; check user auth in actions with `authenticatedAction` (see lib/actions/safe-action.ts)
+-  **Internationalization**: Implement `next-intl` for French/English translations
+   -  Client components: `useTranslations` hook
+   -  Server components: `getTranslations` function
+-  **Error handling**: Translate all Zod/API errors in both languages
+-  **Self-explanatory code**: Avoid unnecessary comments
 
-## Security & Configuration Tips
-- Copy `.env.example` to `.env`; set `DATABASE_URL`, `SHADOW_DATABASE_URL`, `BETTER_AUTH_SECRET`, optional OAuth (`GOOGLE_*`), AI keys, and MCP keys.
-- Do not commit secrets; never expose keys in client code.
-- DB: run `npx prisma migrate dev && npx prisma generate` locally before `dev`.
-- MCP/AI: run `./setup-mcp.sh` if using Claude Code agents.
+## Architecture & Code Organization
+
+### Project Structure
+
+-  **Feature-based architecture**: Use feature folders for each app functionality
+-  **Services layer**: Write all API/Prisma calls in `lib/services/`
+-  **Component splitting**: Refactor components/pages when > 350 lines
+-  **Server-first approach**: Fetch data in `page.tsx` (server-side) and prop drill to client components
+
+### Data Management
+
+-  **Prisma types**: Always use types from `schema.prisma`
+-  **Server actions**: Use `next-safe-action` for all mutations
+-  **Type safety**: Strong typing required (no `any` type)
+-  **Global state**: Use Zustand stores in `lib/stores/` for state shared across distant components
+-  **Store structure**: Separate state and actions interfaces, use TypeScript strict typing
+
+### React/Next.js Patterns
+
+-  **Server components**: Default choice for data fetching and static content
+-  **Client components**: Only when interactivity is required
+-  **Form handling**: Use React Hook Form with Zod validation
+-  **State management**: Prefer server state over client state when possible
+-  **Zustand usage**:
+   -  Use for global state shared between distant components
+   -  Create domain-specific stores (user, theme, preferences)
+   -  Use selectors to optimize re-renders: `const user = useUserStore(state => state.user)`
+   -  Include devtools middleware for debugging in development
+
+## Testing & Debugging
+
+### UI Testing & Analysis
+
+-  **Playwright MCP**: Primary tool for testing and debugging UI
+-  **Screenshots**: Take screenshots as feedback to identify and correct issues
+-  **E2E testing**: Use Playwright for comprehensive testing
+
+## Quality Assurance
+
+### Code Review Process
+
+-  **Automated checking**: Always run `laser-lewis` agent after writing code
+-  **Standards verification**: Ensure all guidelines are followed before commits
+-  **Clean codebase**: Maintain high code quality and consistency
+
+## Project Overview
+
+Next.js 15 application with modern stack and strict development standards:
+
+### Technology Stack
+
+-  **Next.js 15.3.3** with App Router and Turbopack
+-  **TypeScript** with strict mode enabled
+-  **Tailwind CSS v4** for styling
+-  **Better Auth** for authentication (email/password and Google OAuth)
+-  **Prisma** with PostgreSQL for database
+-  **React Hook Form** with Zod for form validation
+-  **Playwright** for E2E testing
+-  **Shadcn UI** for component library
+-  **Next-safe-action** for server actions
+-  **Next-intl** for internationalization (French & English)
+-  **Zustand** for global state management
+
+---
+
+**Development Principle**: Write clean, type-safe, maintainable code that follows modern React/Next.js patterns while adhering to strict architectural guidelines.

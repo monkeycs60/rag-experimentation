@@ -21,19 +21,25 @@ export default function RagPage() {
   const [recent, setRecent] = useState<{ id: string; text: string }[]>([]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch("/api/rag/memory/persona");
-        const d = await r.json();
-        if (r.ok && d.ok) setPersona(d.persona || "");
-      } catch {}
-      try {
-        const r2 = await fetch("/api/rag/memory/recent");
-        const d2 = await r2.json();
-        if (r2.ok && d2.ok) setRecent(d2.items || []);
-      } catch {}
-    })();
+    reloadPersona();
+    reloadRecent();
   }, []);
+
+  async function reloadPersona() {
+    try {
+      const r = await fetch("/api/rag/memory/persona");
+      const d = await r.json();
+      if (r.ok && d.ok) setPersona(d.persona || "");
+    } catch {}
+  }
+
+  async function reloadRecent() {
+    try {
+      const r2 = await fetch("/api/rag/memory/recent");
+      const d2 = await r2.json();
+      if (r2.ok && d2.ok) setRecent(d2.items || []);
+    } catch {}
+  }
 
   async function runIndex() {
     setIndexing(true);
@@ -96,6 +102,7 @@ export default function RagPage() {
       if (!res.ok || !data.ok) throw new Error(data.error || "Answer failed");
       setAnswer(data.answer || null);
       setCitations(Array.isArray(data.citations) ? data.citations : []);
+      if (saveMemory) reloadRecent();
     } catch (e: unknown) {
       if (e instanceof Error) {
         setStatus(e.message);
@@ -202,7 +209,10 @@ export default function RagPage() {
       </div>
 
       <div className="space-y-2 border rounded p-3 bg-white">
-        <div className="text-sm font-medium">Persona (facultatif)</div>
+        <div className="text-sm font-medium flex items-center justify-between">
+          <span>Persona (facultatif)</span>
+          <button onClick={() => { reloadPersona(); reloadRecent(); }} className="text-xs px-2 py-1 rounded border">Refresh</button>
+        </div>
         <textarea
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
