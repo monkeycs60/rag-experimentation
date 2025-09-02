@@ -16,8 +16,12 @@ export default function RagPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.message || "Failed");
       setStatus(data.message || "Indexing complete");
-    } catch (e: any) {
-      setStatus(e?.message || "Indexing failed");
+    } catch (e: unknown) { 
+      if (e instanceof Error) {
+        setStatus(e.message);
+      } else {
+        setStatus("Indexing failed");
+      }
     } finally {
       setIndexing(false);
     }
@@ -36,8 +40,12 @@ export default function RagPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Search failed");
       setResults(data.matches || []);
-    } catch (e: any) {
-      setStatus(e?.message || "Search failed");
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setStatus(e.message);
+      } else {
+        setStatus("Search failed");
+      }
     } finally {
       setLoading(false);
     }

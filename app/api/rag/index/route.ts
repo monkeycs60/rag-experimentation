@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { loadLocalPdfs, chunkText } from "@/lib/services/pdf";
 import { embedTexts } from "@/lib/services/embedding";
 import { getOrCreatePineconeIndex } from "@/lib/services/pinecone";
+import { RecordMetadata } from "@pinecone-database/pinecone";
 
 export const runtime = "nodejs";
 
@@ -30,19 +31,18 @@ export async function POST() {
           source: doc.id,
           page: i,
           text: chunks[i].content,
-        } as Record<string, any>,
+        } as RecordMetadata,
       }));
       // Batch in small groups to avoid payload limits
       const batchSize = 100;
       for (let i = 0; i < upserts.length; i += batchSize) {
         const slice = upserts.slice(i, i + batchSize);
-        // eslint-disable-next-line no-await-in-loop
         await index.upsert(slice);
       }
     }
 
     return NextResponse.json({ ok: true, message: `Indexed ${pdfs.length} PDFs (${totalChunks} chunks)` });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message ?? "Indexing failed" }, { status: 500 });
+  } catch (e: unknown) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "Indexing failed" }, { status: 500 });
   }
 }

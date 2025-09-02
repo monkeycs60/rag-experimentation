@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 async function getPdfParse(): Promise<(b: Buffer) => Promise<{ text: string }>> {
-  const mod: any = await import("pdf-parse/lib/pdf-parse.js");
+  const mod = await import("pdf-parse/lib/pdf-parse.js");
   return (mod?.default ?? mod) as (b: Buffer) => Promise<{ text: string }>;
 }
 

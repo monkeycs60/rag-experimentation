@@ -1,4 +1,4 @@
-import { Pinecone } from "@pinecone-database/pinecone";
+import { Pinecone, ServerlessSpecCloudEnum } from "@pinecone-database/pinecone";
 
 let client: Pinecone | null = null;
 
@@ -19,7 +19,8 @@ export async function getOrCreatePineconeIndex() {
   const existing = await pc.listIndexes();
   const has = existing.indexes?.some((i) => i.name === indexName);
   if (!has) {
-    const cloud = (process.env.PINECONE_CLOUD || "aws") as "aws" | "gcp" | string;
+    const cloud = (process.env.PINECONE_CLOUD ||
+			'aws') as ServerlessSpecCloudEnum;
     const region = process.env.PINECONE_REGION || "us-east-1";
     await pc.createIndex({
       name: indexName,
@@ -36,8 +37,7 @@ export async function getOrCreatePineconeIndex() {
     try {
       for (let i = 0; i < 30; i++) {
         const desc = await pc.describeIndex(indexName);
-        if ((desc as any)?.status?.ready) break;
-        // eslint-disable-next-line no-await-in-loop
+        if ((desc as unknown as { status: { ready: boolean } })?.status?.ready) break;
         await new Promise((r) => setTimeout(r, 2000));
       }
     } catch {}
