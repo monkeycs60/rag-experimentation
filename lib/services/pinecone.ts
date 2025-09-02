@@ -1,4 +1,4 @@
-import { Pinecone, ServerlessSpecCloudEnum } from "@pinecone-database/pinecone";
+import { Index, Pinecone, RecordMetadata, ServerlessSpecCloudEnum } from "@pinecone-database/pinecone";
 
 let client: Pinecone | null = null;
 
@@ -46,4 +46,12 @@ export async function getOrCreatePineconeIndex() {
     } catch {}
   }
   return pc.index(indexName);
+}
+
+export function getIndexNamespace(index: Index<RecordMetadata>, ns: string) {
+  if (typeof (index as { namespace: (ns: string) => Index<RecordMetadata> }).namespace === "function") {
+    return (index as { namespace: (ns: string) => Index<RecordMetadata> }).namespace(ns);
+  }
+  // Fallback: expose a uniform API shape with namespace property
+  return { index, namespace: ns } as { index: Index<RecordMetadata>; namespace: string };
 }

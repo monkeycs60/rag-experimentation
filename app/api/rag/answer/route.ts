@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { embedText } from "@/lib/services/embedding";
-import { getOrCreatePineconeIndex } from "@/lib/services/pinecone";
+import { getOrCreatePineconeIndex, getIndexNamespace } from "@/lib/services/pinecone";
 import { rerankHybrid } from "@/lib/services/rerank";
+import { getTypedSession } from "@/lib/auth-helpers";
 import { RecordMetadata } from "@pinecone-database/pinecone";
 
 export const runtime = "nodejs";
@@ -23,6 +24,8 @@ export async function POST(req: NextRequest) {
     const topK: number = Number(body?.topK ?? 20);
     const contextK: number = Number(body?.contextK ?? 5);
     const temperature: number = Number(body?.temperature ?? 0.2);
+    const detailed: boolean = Boolean(body?.detailed ?? true);
+    const saveMemory: boolean = Boolean(body?.saveMemory ?? true);
     if (!query || typeof query !== "string") {
       return NextResponse.json({ ok: false, error: "Missing query" }, { status: 400 });
     }
@@ -42,6 +45,28 @@ export async function POST(req: NextRequest) {
       source: (m.metadata as RecordMetadata)?.source as string | undefined,
     }));
 
+    // Fetch user persona and recent memory from Pinecone namespace
+    const session = await getTypedSession();
+    const userId = session?.user?.id || "anon";
+    const memNs = `mem:${userId}`;
+    const namespace = getIndexNamespace(index as any, memNs);
+    let personaText = "";
+    try {
+      const fetched = namespace.fetch
+        ? await namespace.fetch(["persona"]) : await (index as any).fetch({ ids: ["persona"], namespace: memNs });
+      const m: any = fetched?.records?.persona || fetched?.vectors?.persona;
+      personaText = m?.metadata?.text || "";
+    } catch {}
+    let memMatches: Match[] = [];
+    try {
+      const memResult = namespace.query
+        ? await namespace.query({ topK: 5, vector, includeMetadata: true })
+        : await (index as any).query({ topK: 5, vector, includeMetadata: true, namespace: memNs });
+      memMatches = (memResult.matches || [])
+        .map((m: any) => ({ id: m.id, score: m.score, text: m.metadata?.text, source: m.metadata?.type || "memory" }))
+        .filter((m: Match) => !!m.text);
+    } catch {}
+
     const reranked = rerankHybrid(query, matches);
     const chosen = reranked.slice(0, contextK);
     const context = buildContext(chosen, contextK);
@@ -52,11 +77,13 @@ export async function POST(req: NextRequest) {
     const base = process.env.OPENAI_BASE_URL || "https://api.openai.com/v1";
     if (!apiKey) throw new Error("OPENAI_API_KEY is not set");
 
-    const system = `You are a precise assistant. Answer ONLY using the provided context. If the context is insufficient, say you don't know.
-Return valid JSON with: {"answer": string, "citations": [{"source": string, "id": string, "snippet": string}]}.
-Citations must reference the provided source and id labels.`;
+    const system = `You are a precise assistant. Use the user persona to tailor tone and focus. Answer ONLY using the provided context and memory. If insufficient, say you don't know.
+Return valid JSON with {"answer": string, "citations": [{"source": string, "id": string, "snippet": string}]}.
+Be comprehensive, structured, and cite multiple sources when relevant.`;
 
-    const user = `Question: ${query}\n\nContext:\n${context}`;
+    const memSec = memMatches.slice(0, 3).map((m, i) => `[[M${i + 1}]] ${m.text}`).join("\n\n");
+    const personaSec = personaText ? `Persona:\n${personaText}\n\n` : "";
+    const user = `${personaSec}Question: ${query}\n\nContext:\n${context}\n\nMemory:\n${memSec}`;
 
     const resp = await fetch(`${base}/chat/completions`, {
       method: "POST",
@@ -67,6 +94,7 @@ Citations must reference the provided source and id labels.`;
       body: JSON.stringify({
         model,
         temperature,
+        max_tokens: detailed ? 900 : 400,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: system },
@@ -88,7 +116,17 @@ Citations must reference the provided source and id labels.`;
       parsed = { answer: content ?? "", citations: chosen.map((c) => ({ source: c.source ?? "", id: c.id, snippet: (c.text ?? "").slice(0, 200) })) };
     }
 
-    return NextResponse.json({ ok: true, answer: parsed?.answer, citations: parsed?.citations, used: chosen });
+    // Optionally store interaction in memory
+    if (saveMemory) {
+      try {
+        const text = `Q: ${query}\nA: ${typeof parsed?.answer === "string" ? parsed.answer.slice(0, 800) : ""}`;
+        const v = await embedText(text);
+        const upsert = [{ id: `qa-${Date.now()}`, values: v, metadata: { type: "qa", text } as any }];
+        await (namespace.upsert ? namespace.upsert(upsert) : (index as any).upsert(upsert, { namespace: memNs }));
+      } catch {}
+    }
+
+    return NextResponse.json({ ok: true, answer: parsed?.answer, citations: parsed?.citations, used: chosen, persona: personaText });
   } catch (e: unknown) {
     if (e instanceof Error) {
       return NextResponse.json({ ok: false, error: e.message }, { status: 500 });
@@ -96,4 +134,3 @@ Citations must reference the provided source and id labels.`;
     return NextResponse.json({ ok: false, error: "Answer failed" }, { status: 500 });
   }
 }
-

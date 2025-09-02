@@ -14,6 +14,10 @@ export default function RagPage() {
   const [clearing, setClearing] = useState(false);
   const [stats, setStats] = useState<RecordMetadata | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [persona, setPersona] = useState("");
+  const [savingPersona, setSavingPersona] = useState(false);
+  const [saveMemory, setSaveMemory] = useState(true);
+  const [detailed, setDetailed] = useState(true);
 
   async function runIndex() {
     setIndexing(true);
@@ -70,7 +74,7 @@ export default function RagPage() {
       const res = await fetch("/api/rag/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, saveMemory, detailed }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Answer failed");
@@ -84,6 +88,25 @@ export default function RagPage() {
       }
     } finally {
       setAnswering(false);
+    }
+  }
+  async function savePersonaText() {
+    if (!persona.trim()) return;
+    setSavingPersona(true);
+    setStatus(null);
+    try {
+      const res = await fetch("/api/rag/memory/persona", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ persona }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Save failed");
+      setStatus("Persona saved");
+    } catch (e: unknown) {
+      if (e instanceof Error) setStatus(e.message); else setStatus("Save failed");
+    } finally {
+      setSavingPersona(false);
     }
   }
 
@@ -149,6 +172,29 @@ export default function RagPage() {
           {loadingStats ? "Loading…" : "Stats"}
         </button>
         {status && <span className="text-sm">{status}</span>}
+      </div>
+
+      <div className="space-y-2 border rounded p-3 bg-white">
+        <div className="text-sm font-medium">Persona (facultatif)</div>
+        <textarea
+          value={persona}
+          onChange={(e) => setPersona(e.target.value)}
+          placeholder="Décrivez votre rôle, objectifs, ton préféré…"
+          className="w-full border rounded px-3 py-2 text-sm h-24"
+        />
+        <div className="flex items-center gap-2">
+          <button onClick={savePersonaText} disabled={savingPersona} className="px-3 py-2 rounded bg-gray-900 text-white disabled:opacity-50">
+            {savingPersona ? "Saving…" : "Save Persona"}
+          </button>
+          <label className="text-sm flex items-center gap-2">
+            <input type="checkbox" checked={saveMemory} onChange={(e) => setSaveMemory(e.target.checked)} />
+            Save Q/A to memory
+          </label>
+          <label className="text-sm flex items-center gap-2">
+            <input type="checkbox" checked={detailed} onChange={(e) => setDetailed(e.target.checked)} />
+            Detailed answer
+          </label>
+        </div>
       </div>
 
       <div className="flex gap-2">
