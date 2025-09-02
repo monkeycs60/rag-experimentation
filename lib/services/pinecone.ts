@@ -19,11 +19,28 @@ export async function getOrCreatePineconeIndex() {
   const existing = await pc.listIndexes();
   const has = existing.indexes?.some((i) => i.name === indexName);
   if (!has) {
+    const cloud = (process.env.PINECONE_CLOUD || "aws") as "aws" | "gcp" | string;
+    const region = process.env.PINECONE_REGION || "us-east-1";
     await pc.createIndex({
       name: indexName,
       dimension,
       metric: "cosine",
+      spec: {
+        serverless: {
+          cloud,
+          region,
+        },
+      },
     });
+    // Optionally wait until ready (best-effort)
+    try {
+      for (let i = 0; i < 30; i++) {
+        const desc = await pc.describeIndex(indexName);
+        if ((desc as any)?.status?.ready) break;
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    } catch {}
   }
   return pc.index(indexName);
 }
